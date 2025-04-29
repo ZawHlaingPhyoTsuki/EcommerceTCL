@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  emailVerified Boolean    @default(false)
+  image         String?
+  role          Role       @default(CUSTOMER)
+  favorites     Favorite[]
+  seller        Seller?
+  sellerId      String?
+
+  sessions Session[] // 👉 Better Auth relation
+  accounts Account[] // 👉 Better Auth relation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email]) // 👉 Faster email lookups (auth)
+  @@index([sellerId]) // 👉 Joins with Seller
+  @@index([createdAt]) // 👉 Time-based queries
+  @@index([role]) // 👉 Added: Filter users by role
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime // 👉 Critical for session cleanup
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId]) // 👉 Faster session retrieval by user
+  @@index([token]) // 👉 Already unique, but speeds up auth flows
+  @@index([expiresAt]) // 👉 Critical for expiring old sessions
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String // 👉 Provider's user ID (e.g., Google sub)
+  providerId            String // 👉 e.g., "google", "github"
+  accessToken           String? // 👉 Encrypt if storing sensitive data
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String? // 👉 Hashed if using email/password
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId]) // 👉 Critical: Ensure one account per provider
+  @@index([userId]) // 👉 Faster user account lookups
+  @@index([providerId]) // 👉 Filter by provider (e.g., all Google accounts)
+  @@index([accessTokenExpiresAt]) // 👉 Token cleanup
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String // 👉 Typically email/phone
+  value      String // 👉 Token/OTP
+  expiresAt  DateTime // 👉 Critical for expiration checks
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier, value]) // 👉 Faster verification lookups
+  @@index([expiresAt]) // 👉 Cleanup expired tokens
+}
+
+// Keep your existing models with minor optimizations:
+model Seller {
+  id       String    @id @default(cuid())
+  name     String
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String    @unique
+  shopName String
+  bio      String?
+  products Product[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId]) // 👉 Covered by @unique but keeps queries explicit
+  @@index([shopName]) // 👉 Faster shop search
+  @@index([createdAt]) // 👉 Time-based sorting
+}
+
+model Product {
+  id             String     @id @default(cuid())
+  title          String
+  slug           String     @unique
+  description    String?
+  imageUrl       String
+  price          Int
+  category       Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId     String
+  seller         Seller     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  sellerId       String
+  isFeatured     Boolean    @default(false)
+  isArchived     Boolean    @default(false)
+  favoritedBy    Favorite[]
+  favoritesCount Int        @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([slug]) // 👉 Already unique, but speeds up slug lookups
+  @@index([categoryId]) // 👉 Faster category filtering
+  @@index([sellerId]) // 👉 Faster seller product lists
+  @@index([price]) // 👉 Price range queries
+  @@index([isFeatured]) // 👉 Featured product dashboards
+  @@index([isArchived]) // 👉 Admin archival views
+  @@index([favoritesCount]) // 👉 Popularity sorting
+  @@index([createdAt]) // 👉 Newest product listings
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  imageUrl String
+  products Product[]
+
+  @@index([name]) // 👉 Covered by @unique but explicit for queries
+  @@index([slug]) // 👉 Covered by @unique but explicit for queries
+}
+
+model Favorite {
+  id        String  @id @default(cuid())
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId]) // 👉 Prevent duplicate favorites
+  @@index([userId]) // 👉 User's favorite list
+  @@index([productId]) // 👉 Product popularity metrics
+  @@index([createdAt]) // 👉 Recent activity
+}
+
+enum Role {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
