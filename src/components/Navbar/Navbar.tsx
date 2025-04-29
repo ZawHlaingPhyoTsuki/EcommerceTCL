@@ -2,22 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, ShoppingCart, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import CartBtn from "./CartBtn";
+import AvatarSquare from "./AvatarSquare";
+import { authClient } from "@/lib/auth-client";
+import { UserDropDown } from "./UserDropDown";
 
 export function Navbar() {
+  const { data: session } = authClient.useSession();
   const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
@@ -28,7 +25,7 @@ export function Navbar() {
   ];
 
   return (
-    <header className="w-full backdrop-blur bg-neutral-50 text-black dark:bg-neutral-900 dark:text-white">
+    <header className="w-full backdrop-blur bg-neutral-50 text-black dark:bg-neutral-900 dark:text-white mb-2">
       <div className="w-full flex h-16 items-center justify-between mx-auto px-4">
         {/* Mobile menu button and logo (visible on xl screens) */}
         <div className="w-full flex justify-between items-center md:hidden">
@@ -83,34 +80,16 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2 text-lg font-semibold md:hidden"
           >
-            <Avatar className="rounded-xl h-[35px] w-[35px]">
-              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-              <AvatarFallback>ZH</AvatarFallback>
-            </Avatar>
-            <span className="text-primary text-sm">SHOP NAME</span>
+            <AvatarSquare
+              src="https://github.com/shadcn.png"
+              alt="@shadcn"
+              fallback="ZH"
+              title="SHOP NAME"
+            />
           </Link>
 
           {/* Cart button */}
-          <div className="flex items-center gap-2">
-            <Drawer direction="right">
-              <DrawerTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <ShoppingCart className="h-5 w-5" />
-                  <span className="sr-only">Cart</span>
-                </Button>
-              </DrawerTrigger>
-              <DrawerContent className="h-[100%]">
-                <DrawerHeader>
-                  <DrawerTitle className="">My Cart</DrawerTitle>
-                  <DrawerDescription>Checkout your cart</DrawerDescription>
-                </DrawerHeader>
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                  <ShoppingCart className="h-12 w-12 mb-4" />
-                  <p>Your cart is empty</p>
-                </div>
-              </DrawerContent>
-            </Drawer>
-          </div>
+          <CartBtn />
         </div>
 
         {/* Logo and categories (visible on small screens and up) */}
@@ -120,13 +99,12 @@ export function Navbar() {
             href="/"
             className="flex items-center gap-2 text-lg font-semibold"
           >
-            <Avatar className="rounded-xl h-[35px] w-[35px]">
-              <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-              <AvatarFallback>ZH</AvatarFallback>
-            </Avatar>
-            <span className="hidden lg:block text-primary text-sm">
-              SHOP NAME
-            </span>
+            <AvatarSquare
+              src="https://github.com/shadcn.png"
+              alt="@shadcn"
+              fallback="ZH"
+              title="SHOP NAME"
+            />
           </Link>
 
           {/* Categories */}
@@ -158,24 +136,8 @@ export function Navbar() {
 
         {/* Cart button */}
         <div className="w-1/3 hidden md:flex items-center gap-2 justify-end">
-          <Drawer direction="right">
-            <DrawerTrigger asChild>
-              <Button variant="outline" size="icon">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="sr-only">Cart</span>
-              </Button>
-            </DrawerTrigger>
-            <DrawerContent className="h-[100%]">
-              <DrawerHeader>
-                <DrawerTitle className="">My Cart</DrawerTitle>
-                <DrawerDescription>Checkout your cart</DrawerDescription>
-              </DrawerHeader>
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <ShoppingCart className="h-12 w-12 mb-4" />
-                <p>Your cart is empty</p>
-              </div>
-            </DrawerContent>
-          </Drawer>
+          <CartBtn />
+          {session ? <UserDropDown user={session.user} /> : null}
         </div>
       </div>
     </header>
