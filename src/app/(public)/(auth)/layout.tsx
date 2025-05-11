@@ -1,0 +1,23 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
+export default async function AuthLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (session) return redirect("/home");
+  return (
+    <main>
+      <h1>From auth layout</h1>
+      <div className="h-screen flex flex-col items-center justify-center">
+        {children}
+      </div>
+    </main>
+  );
+}

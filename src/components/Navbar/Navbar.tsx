@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, Search } from "lucide-react";
+import { LogIn, Menu, Search } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -10,11 +10,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DialogDescription, DialogTitle } from "@radix-ui/react-dialog";
 import CartBtn from "./CartBtn";
 import AvatarSquare from "./AvatarSquare";
-import { authClient } from "@/lib/auth-client";
 import { UserDropDown } from "./UserDropDown";
 
 export function Navbar() {
-  const { data: session } = authClient.useSession();
   const [searchQuery, setSearchQuery] = useState("");
 
   const categories = [
@@ -86,10 +84,18 @@ export function Navbar() {
               fallback="ZH"
               title="SHOP NAME"
             />
+            <span className="block text-primary text-sm">
+              SHOP NAME
+            </span>
           </Link>
 
           {/* Cart button */}
-          <CartBtn />
+          <div className="flex items-center gap-2">
+            <CartBtn />
+            <Link href="/sign-in" className={buttonVariants({variant: "default", size:"icon"})}>
+              <LogIn className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
 
         {/* Logo and categories (visible on small screens and up) */}
@@ -137,7 +143,7 @@ export function Navbar() {
         {/* Cart button */}
         <div className="w-1/3 hidden md:flex items-center gap-2 justify-end">
           <CartBtn />
-          {session ? <UserDropDown user={session.user} /> : null}
+          <UserDropDown />
         </div>
       </div>
     </header>

@@ -12,14 +12,17 @@ import {
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import AvatarSquare from "./AvatarSquare";
-import { User } from "better-auth";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 // import { ModeToggle } from "./ModeToggle";
 // import { ModeToggleDropdownItem } from "./ModeToggleDropdownItem";
 
-export function UserDropDown({ user }: { user: User }) {
+export function UserDropDown() {
   const router = useRouter();
+
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user;
+
   const handleSignOut = async () => {
     try {
       await authClient.signOut({
@@ -34,6 +37,10 @@ export function UserDropDown({ user }: { user: User }) {
       console.error("Sign out failed:", error);
     }
   };
+
+  if (isPending) {
+    return null;
+  }
 
   return (
     <div className="flex items-center gap-2">
@@ -77,11 +84,11 @@ export function UserDropDown({ user }: { user: User }) {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Button asChild variant="outline">
-          <div className="flex items-center gap-2">
+        <Button asChild variant="default">
+          <Link href="/sign-in" className="flex items-center gap-2">
             <LogIn className="h-4 w-4" />
             <span>Sign In</span>
-          </div>
+          </Link>
         </Button>
       )}
     </div>
